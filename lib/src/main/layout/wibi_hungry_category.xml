@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<layout xmlns="http://www.wibidata.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.wibidata.com layout.xsd">
+  <name>wibi_hungry_category</name>
+  <description>Categories (topics/items/categories/labels) and their related items.</description>
+  <hashRowKeys>false</hashRowKeys>
+  <families>
+    <family type="group" localityGroup="default">
+      <name>related</name>
+      <description>Category and related dishes</description>
+      <columns>
+        <column>
+          <name>dish</name>
+          <description>Category and related dishes</description>
+          <schema type="class">com.wibidata.core.client.avro.Node</schema>
+        </column>
+      </columns>
+    </family>
+  </families>
+  <localityGroups>
+    <localityGroup>
+      <name>default</name>
+      <description>The default locality group on disk</description>
+      <inMemory>false</inMemory>
+      <maxVersions>1</maxVersions>
+      <ttlSeconds>infinity</ttlSeconds>
+      <compressionType>none</compressionType>
+    </localityGroup>
+  </localityGroups>
+</layout>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+  <display-name>My Wibi App</display-name>
+
+  <servlet>
+    <servlet-name>HomePage</servlet-name>
+    <servlet-class>com.wibidata.hungry.servlet.HomePageServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <servlet-name>Dish</servlet-name>
+    <servlet-class>com.wibidata.hungry.servlet.DishServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <servlet-name>CreateUser</servlet-name>
+    <servlet-class>com.wibidata.hungry.servlet.CreateUserServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <servlet-name>SignIn</servlet-name>
+    <servlet-class>com.wibidata.hungry.servlet.SignInServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <servlet-name>SignOut</servlet-name>
+    <servlet-class>com.wibidata.hungry.servlet.SignOutServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>/bootstrap/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>/static/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>HomePage</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>Dish</servlet-name>
+    <url-pattern>/dish</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>CreateUser</servlet-name>
+    <url-pattern>/createuser</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>SignIn</servlet-name>
+    <url-pattern>/signin</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>SignOut</servlet-name>
+    <url-pattern>/signout</url-pattern>
+  </servlet-mapping>
+
+  <listener>
+    <listener-class>com.wibidata.hungry.WibiContextListener</listener-class>
+  </listener>
+</web-app>

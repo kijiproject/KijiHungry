@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<configuration>
+  <property>
+    <name>wibi.freshener.class</name>
+    <value>com.wibidata.core.client.lib.freshen.WibiProducerFreshener</value>
+  </property>
+  <property>
+    <name>wibi.freshness.policy.class</name>
+    <value>com.wibidata.core.client.lib.freshen.policy.NeverFreshFreshnessPolicy</value>
+  </property>
+  <property>
+    <name>wibi.producer.class</name>
+    <value>com.wibidata.hungry.produce.FavoriteIngredientsProducer</value>
+  </property>
+</configuration>

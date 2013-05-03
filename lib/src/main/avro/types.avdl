@@ -1,0 +1,66 @@
+@namespace("org.kiji.hungry.avro")
+
+protocol Types {
+  /** A user in our application. */
+  record User {
+    /** A user name */
+    string name;
+
+    /** An email address. */
+    string email;
+  }
+
+  /** A single ingredient in a dish. */
+  record DishIngredient {
+    /** The human-readable name of the ingredient. */
+    string name;
+  }
+
+  /** A list of ingredients in a dish. */
+  record DishIngredients {
+    /** The ingredients. */
+    array<DishIngredient> ingredients;
+  }
+
+  /** Stores the information about when a user rates a dish. */
+  record DishRating {
+    /** The id of the dish that was rated. */
+    string dish_id;
+
+    /** The name of the dish that was rated. */
+    string dish_name;
+
+    /** The value of the rating (-1, 0, or +1). */
+    int value;
+  }
+
+  /** An ingredient a user likes. */
+  record FavoriteIngredient {
+    /** The name of the ingredient. */
+    string name;
+
+    /** The weight of the favorite ingredient (how much the user likes it). */
+    double weight;
+  }
+
+  /** A user's favorite ingredients. */
+  record FavoriteIngredients {
+    /** The favorite ingredients. */
+    array<FavoriteIngredient> ingredients;
+  }
+
+  /** A recommended dish. */
+  record DishRecommendation {
+    /** The id of the recommended dish. */
+    string id;
+
+    /** How much the algorithm thinks the user will like it. */
+    double weight;
+  }
+
+  /** Recommended dishes for a user. */
+  record DishRecommendations {
+    /** The list of recommended dishes, sorted by decreasing weight. */
+    array<DishRecommendation> recommendations;
+  }
+}

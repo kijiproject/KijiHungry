@@ -1,0 +1,1807 @@
+<!doctype html>
+<html>
+  <head>
+    <title>WibiHungry Tutorial</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        font-size: 10pt;
+        width: 680px;
+        margin: auto;
+      }
+      img {
+        width: 680px;
+      }
+      h2 {
+        color: #888;
+      }
+    </style>
+    <script src="generated_toc.js"></script>
+  </head>
+  <body>
+    <h1>WibiHungry- A WibiData Tutorial</h1>
+    <p>This document introduces the WibiData platform via a simple web
+    application.</p>
+
+    <h2>Table of Contents</h2>
+    <div id="generated-toc">
+    </div>
+
+    <h2>Document Overview</h2>
+
+    <p>The purpose of this document is to teach you enough about the
+    WibiData platform to start building your own personalized
+    applications. You will be building an interactive web application
+    called WibiHungry in a guided step-by-step tutorial. This document
+    is divided into 3 sections:</p>
+
+    <h3>Section 1: What Is WibiHungry?</h3>
+    <p>The first section describes the features of the WibiHungry web
+    application, so you know what your completed exercise should look
+    like.</p>
+
+    <h3>Section 2: How Does WibiHungry Work?</h3>
+    <p>The second section briefly describes the architecture of
+    WibiHungry.</p>
+
+    <h3>Section 3: Building Your Own WibiHungry Application.</h3>
+    <p>The third section starts with a description of the development
+    environment we have set up for you to build your own WibiHungry
+    application. It is followed by tutorial instructions that start
+    out with the basics and lead up to building personalized
+    recommendations.</p>
+
+    <h2>Section 1: What Is WibiHungry</h2>
+
+    <p>WibiHungry is an interactive web application for users to
+    explore, rate, and discover delicious dishes. After creating an
+    account, a user can browse dishes by cuisine to provide
+    ratings. The application will use these preferences to recommend
+    other dishes the user may enjoy.</p>
+
+    <h3>The "Dishes" Data Set</h3>
+
+    <p>A collection of dishes has been downloaded and sanitized for
+    use in WibiHungry. This data set
+    from <a href="http://www.freebase.com">Freebase</a>
+    contains the following information about
+    each dish:</p>
+
+    <ul>
+      <li>Name</li>
+      <li>Wikipedia Identifier</li>
+      <li>Description</li>
+      <li>Cuisine</li>
+      <li>Image</li>
+      <li>Ingredients</li>
+    </ul>
+
+    <h3>The Reference Implementation</h3>
+
+    <p>A sample implementation of the WibiHungry application has been
+    included on your training virtual machine at
+    <code>$HOME/wibi-hungry-completed</code> to give you a better idea of what you
+    are trying to build. The remainder of this section describes the
+    features and user flow of the application. If you would like, you
+    can start the sample application and try it yourself by compiling
+    and running it:</p>
+
+    <code>
+      <pre>
+    <i>(From the $HOME/wibi-hungry-completed directory)</i>
+    $ <b>./build.sh</b>
+    $ <b>./start.sh</b>
+      </pre>
+    </code>
+
+    <p>You can open a web browser in your virtual machine to
+    <a href="http://localhost:9000">http://localhost:9000</a> to see
+    the completed application in action.</p>
+
+    <p>Below is a screenshot of the home page, where you can see that
+    users can:</p>
+
+    <ul>
+      <li>Create an account</li>
+      <li>Sign in to an existing account</li>
+      <li>Browse dishes organized by cuisine</li>
+    </ul>
+
+    <img src="images/image05.png"/>
+
+    <h4>Creating an account</h4>
+
+    <p>If the user clicks "Create an account," the account creation
+    page is displayed, where a user can enter their name and choose a
+    login/password combination. Below is a screenshot of the account
+    creation page.</p>
+
+    <img src="images/image07.png"/>
+
+    <h4>Signing into an Existing Account</h4>
+
+    <p>If the user has previously created an account, clicking "Sign
+    In" from the home page will prompt the user for a login and
+    password. A screenshot of the sign in page is below:</p>
+
+    <img src="images/image00.png"/>
+
+    <h4>Rating a Dish</h4>
+
+    <p>When signed in, a user can click the name of a dish in the
+    "Browse by cuisine" section to view the description and
+    ingredients of a dish. From there, the user can rate the dish on
+    scale of "Yum!" to "Blech!"</p>
+
+    <img src="images/image13.png"/>
+
+    <h4>Discovering New Dishes</h4>
+
+    <p>Back on the home page, the user will see their recent ratings,
+    a ranked list of their favorite ingredients based on the dishes
+    they like, and a few recommended dishes they haven't rated. Unlike
+    batch-based recommendation applications, WibiHungry provides
+    real-time recommendations based on the ratings up to the current
+    moment in time.</p>
+
+    <img src="images/image12.png"/>
+
+    <p>The next section describes the architecture of the WibiHungry
+    application to provide a high level overview of what you will be
+    building in the tutorial section.</p>
+
+    <h2>Section 2: How Does WibiHungry Work?</h2>
+
+    <p>We will maintain three data sets for the WibiHungry
+    application: users, dishes, and categories. Each of these data
+    sets map nicely to a WibiTable.</p>
+
+    <ul>
+      <li>
+        <b>wibi_hungry_user</b>
+        <p>The <code>wibi_hungry_user</code> table will contain the
+        users that have registered with the application. Each row in
+        the table will represent a single user, a classic example of
+        what we mean by a user-centric data model. For each user, we
+        will store account attributes like their name, login, and
+        password. Additionally, we will store their stream of actions
+        (e.g., ratings, clicks) and information the system derives
+        (e.g. recommendations, profiles). These bits of per-user
+        information will be stored in structured records in the
+        columns of the Wibi table row.</p>
+      </li>
+      <li>
+        <b>wibi_hungry_dish</b>
+        <p>The <code>wibi_hungry_dish</code> table will contain the
+        basic information we have about a dish. We will populate the
+        dish table with our data set from Freebase. Each row in the
+        table will represent a single dish, keyed by its unique
+        Wikipedia identifier, (e.g. "/en/chocolate_brownie"). The
+        columns of the table will store other attributes like
+        ingredients, a description, and the type of cuisine.</p>
+      </li>
+      <li>
+        <b>wibi_hungry_category</b>
+        <p>The <code>wibi_hungry_category</code> table is the most
+        general of the three tables we will need. A "category" may be
+        a cuisine (e.g., "chinese"), a style (e.g., "spicy"), or even
+        a particular ingredient (e.g., "flour"). Each row will contain
+        relevant information about the category. For example, the
+        "cuisine:chinese" row might contain all of the dishes that are
+        chinese. The "ingredient:flour" row might contain all of the
+        dishes that contain flour. You can think of this table as a
+        lookup table for related dishes or items, which will be useful
+        when computing recommendations.</p>
+      </li>
+    </ul>
+
+    <p>These tables will be maintained by WibiData, which will
+    ultimately store them in HBase for you. Therefore, Hadoop and
+    HBase must be installed to support the backend for this
+    application.</p>
+
+    <p>For the web application code, we will use a simple Java
+    Servlet. We will use the WibiData Java API to make requests to our
+    Wibi tables. Alternatively we could use Apache Thrift for RPC
+    through the Data Access Server to support languages other than
+    Java.</p>
+
+    <p>Finally, we'll be using Java to implement gatherers to train
+    our recommendation models and producers to apply those models to
+    individual users. You can also further customize the real time
+    behavior of WibiData by implementing freshness policies, or you
+    may simply use an existing policy included in the library. We will
+    introduce gatherers, producers, and freshness policies in more
+    detail as you use them in the tutorial section.</p>
+
+    <h2>Section 3: Building Your Own WibiHungry Application</h2>
+
+    <p>You will be starting with a skeleton project on your training
+    virtual machine. Let's first learn about what you have in your
+    training virtual machine.</p>
+
+    <h3>Development Environment</h3>
+
+    <p>Your training virtual machine has the following already installed:</p>
+
+    <ul>
+      <li>Oracle Java JDK 6.0</li>
+      <li>Apache Maven 3.0</li>
+      <li>Apache Hadoop 2.0 CDH4 - <code>HADOOP_HOME=/usr/lib/hadoop</code></li>
+      <li>Apache HBase 0.92 CDH4 - <code>HBASE_HOME=/usr/lib/hbase</code></li>
+      <li>Wibi Core 2.0.0 - <code>WIBI_HOME=/usr/lib/wibidata/wibi-2.0.0</code></li>
+    </ul>
+
+    <p>You will also have a skeleton WibiHungry application you will
+    be completing during this tutorial; it is stored in your home
+    directory at <code>$HOME/wibi-hungry-tutorial</code>.</p>
+
+    <p>This tutorial also uses the following technologies. We will
+    describe what you need to know throughout the tutorial, so deep
+    understanding of them is not required. The following links may be
+    helpful if you want to explore further:</p>
+
+    <ul>
+      <li>Apache Maven 3.0
+      (<a href="http://maven.apache.org/guides/getting-started/maven-in-five-minutes.html">Maven
+      in Five Minutes</a>)</li>
+      <li>Apache Avro 1.7
+      (<a href="http://avro.apache.org/docs/1.7.1/">Documentation</a>,
+      and <a href="https://docs.wibidata.com/docs/display/WIBI/Working+with+Avro+Data">Working
+      with Avro Data in Wibi</a>)</li>
+      <li>JSON
+      (<a href="http://www.w3resource.com/JSON/introduction.php">Introduction</a>)
+      and CodeHaus Jackson JSON Parser
+      (<a href="http://wiki.fasterxml.com/JacksonInFiveMinutes">Jackson
+      in Five Minutes</a>)</li>
+      <li>Java Servlet API 2.5
+      (<a href="http://en.wikipedia.org/wiki/Java_Servlet">http://en.wikipedia.org/wiki/Java_Servlet</a>)</li>
+      <li>Jetty HTTP Server (<a href="http://wiki.eclipse.org/Jetty">Documentation</a>)</li>
+    </ul>
+
+    <h3>Skeleton Starter Project</h3>
+
+    <p>In the home directory you have two projects:
+    <code>$HOME/wibi-hungry-tutorial</code>
+    and <code>$HOME/wibi-hungry-completed</code>. The
+    <code>wibi-hungry-tutorial</code> project is the skeleton that
+    you'll be starting with. You will edit and build upon this project in the
+    steps of the tutorial that follow. The <code>wibi-hungry-completed</code>
+    project is a completed sample WibiHungry implementation that you
+    may use as a reference (though try not to look at the source
+    unless you get stuck).</p>
+
+    <p>Your starting point for the tutorial is a Java code project
+    built using Apache Maven 3.0. Here is a description of its
+    directory structure:</p>
+
+    <ul>
+      <li><code>pom.xml</code> - The project object model XML file that describes
+      the project structure, build dependencies, and
+      configuration. Apache Maven uses this file during the build
+      process.</li>
+      <li><code>app/</code> - One of two submodules in this Maven project. This
+      directory contains the code for the web application
+      itself. Building this module produces a deployable WAR artifact
+      which can be run in a web application container.
+        <ul>
+          <li><code>pom.xml</code> - This is the project object model XML file that
+          describes the project structure and build configuration for
+          the web application.</li>
+          <li><code>src/main/java/</code> - This directory contains the Java code
+          required to support the web application logic. Java Model
+          and Controller code (in the MVC design pattern) are stored
+          here.</li>
+          <li><code>src/main/webapp/</code> - Web resources and Views are stored
+          here.
+            <ul>
+              <li><code>bootstrap/</code> - We've included a web component and
+              styling toolkit
+              called <a href="http://twitter.github.com/bootstrap/">Twitter
+              Bootstrap</a> to assist with
+              the visual components of the web site. You won't need to
+              edit anything in this directory.</li>
+              <li><code>static/</code> - Static web resources like images,
+              stylesheets, and javascript are served directly from
+              this directory.</li>
+              <li><code>WEB-INF/</code> - Configuration and Views for the
+              application.
+                <ul>
+                  <li><code>web.xml</code> - The servlet configuration XML file.</li>
+                  <li><code>view/</code> - The JSP views the used for rendering pages.</li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><code>lib/</code> - The second submodule in this Maven project. This
+      directory contains the library code that leverages the WibiData
+      platform. Producers, gatherers, and bulk importers are stored
+      here so they can be compiled and packaged into a JAR artifact
+      which can be used by WibiData.
+        <ul>
+          <li><code>pom.xml</code> - This is the project object model XML file that
+          describes the project structure and build configuration for
+          code targeting the WibiData platform.</li>
+          <li><code>src/main/</code> - Code and resources.
+            <ul>
+              <li><code>avro/types.avdl</code> - Definitions for Avro records used
+              in the Wibi tables. See
+              the <a href="http://avro.apache.org/docs/current/idl.html">Avro
+              Specification</a> for the
+              syntax used in this file.</li>
+              <li><code>freshen/</code> - Freshener configuration for Wibi
+              tables.</li>
+              <li><code>java/</code> - Java code intended to be run by WibiData,
+              e.g., producers, gatherers, and bulk importers.</li>
+              <li><code>layout/</code> - WibiData table layout XML files that
+              describe the structure and schema of a Wibi table.</li>
+            </ul>
+          </li>
+          <li><code>src/test/</code> - Test code and resources.
+            <ul>
+              <li><code>java/</code> - Java code for unit testing the classes in
+              src/main/java/.</li>
+              <li><code>resources/</code> - Resources available to the testing
+              code.</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+
+    <p>The following section will contain step-by-step instructions
+    for transforming our skeleton project into a completed,
+    fully-functional WibiHungry application.</p>
+
+    <h3>Implementation Strategy</h3>
+
+    <p>Here are the steps we will go through to complete the
+    WibiHungry application:</p>
+
+    <ol>
+      <li><b>Build the project for the first time.</b></li>
+
+      <li><b>Create the wibi_hungry_dish and wibi_hungry_user
+      tables.</b> Create our first WibiData tables.</li>
+
+      <li><b>Populate the wibi_hungry_dish table.</b>
+      You will write a bulk importer to efficiently scan over the
+      dish data set and insert it into the rows of the dish
+      WibiTable.</li>
+
+      <li><b>Create the wibi_hungry_category table.</b>
+      This table will contain dishes related to ingredients or
+      cuisines so they can be displayed for browsing or used by
+      recommenders.</li>
+
+      <li><b>Index the dishes by cuisine.</b>
+      To populate the table that maps from cuisines to dishes, you
+      will write a gatherer that reads from the dish table and writes
+      to the category table.</li>
+
+      <li><b>Start the web application.</b>
+
+      <li><b>Display dishes by cuisine.</b>
+      Our first feature to be added to the web application is to
+      display the dishes by cuisine so users can browse.</li>
+
+      <li><b>Display dish details.</b>
+      When a user clicks on a dish in the web application, read the
+      description and ingredients of the dish from the dish table and
+      display them.</li>
+
+      <li><b>Write ratings to the wibi_hungry_user table.</b>
+      Add a new column in the user table to hold the ratings. The web
+      application should write the appropriate rating when the button
+      is clicked.</li>
+
+      <li><b>Compute a user's favorite ingredients.</b>
+      Use a <i>WibiProducer</i> that reads from a user's ratings column and
+      joins it with the dish table to produce the user's favorite
+      ingredients into a new column.</li>
+
+      <li><b>Configure the ingredient producer to run with a freshness
+      policy.</b> Attach a <i>WibiFreshener</i> to the favorite ingredients
+      column in the user table. Configure the freshener to run the
+      producer on demand.</li>
+
+      <li><b>Display the user's favorite ingredients.</b>
+      With the freshener configured to run the producer when the
+      favorite ingredients column is requested from the user table,
+      configure the web application to read and display them.</li>
+
+      <li><b>Write a gatherer to index dishes by ingredient.</b>
+      To generate recommendations based on a user's favorite
+      ingredients, you'll need to be able to look up the dishes that
+      contain a given ingredient. Write a <i>WibiGatherer</i> over the dish
+      table to pivot the data into the category table.</li>
+
+      <li><b>Write a producer to compute a user's recommended
+      dishes.</b> Write a producer that reads from the user's favorite
+      ingredients and generates a list of dishes that contain those
+      ingredients. It will look up dishes by ingredient in the
+      category table you populated in the previous step. Be sure to
+      filter out dishes the user has already rated.</li>
+
+      <li><b>Configure the recommendation producer to run with a
+      freshness policy.</b> Like with the favorite ingredients column,
+      attach a freshener to run the dish recommendation producer
+      written in the previous step when the user table's
+      recommendations column is read.</li>
+
+      <li><b>Display the user's dish recommendations.</b>
+      Display the dish recommendations in the web application by
+      querying the dish recommendations column from the user
+      table. They will automatically be computed in real time by the
+      freshener you configured in the previous step.</li>
+    </ol>
+
+    <p>Once the basic recommendations are working in your application,
+    you can start collecting user data and experiment with different
+    ways of improving your recommendation algorithm. For example, you
+    could use collaborative filtering to find relationships between
+    dishes that may not necessarily have the same ingredients (e.g.,
+    many people who like apple pie also like ice cream). You may
+    extend existing WibiGatherers included in the WibiData library or
+    implement your own to extract these types of relationships. More
+    details can be found in the Next Steps section at the end of this
+    document.</p>
+
+    <h4>1. Build the project for the first time</h4>
+
+    <p>First, let's familiarize ourselves with the WibiData command
+    line interface. To verify that you have WibiData installed and see
+    a list of WibiTables in your system, you can use the <code>wibi ls</code>
+    command. Here is an example of the command run on a fresh
+    installation of WibiData (you can run this on your tutorial
+    virtual machine now):</p>
+
+    <code>
+      <pre>
+    $ wibi ls
+    job_history
+      </pre>
+    </code>
+
+    <p>At first, there exists only a single table called <code>job_history</code>,
+    which contains the list of MapReduce jobs you have run using
+    WibiData. This single table is created automatically when WibiData
+    is installed.</p>
+
+    <p>Before diving into the implementation of WibiHungry, you may
+    find it helpful to familiarize yourself with the WibiData command
+    line tools by following the Quick Start in
+    the <a href="https://docs.wibidata.com/releases/wibi/latest/userguide/ch02.html">WibiData
+    User Guide</a>. You may see a list of available commands at any time if you
+    run wibi without a command:</p>
+
+    <code>
+      <pre>
+    $ wibi
+    USAGE
+
+      wibi COMMAND [FLAG]...
+
+    COMMANDS
+
+      help                  - Display this help message
+      install               - Install Wibi onto a running HBase instance
+      version               - Print the wibi version running
+      license               - View or update your license details
+      upgrade               - Upgrade to a newer version of Wibi
+      metadata              - Backup or restore Wibi metadata
+      classpath             - Print the classpath used to build or run Wibi
+
+      jar                   - Run a main class from the specified jar
+                              Use: wibi jar <jarFile> <mainClass> [args...]
+
+      server                - Start a wibi frontend server (foreground)
+      start-server          - Start a server as a background process
+      stop-server           - Stop a running background server
+      restart-server        - Stop and restart server
+
+      ls                    - List, describe, or scan Wibi tables
+      create-table          - Create a Wibi table
+      delete-table          - Delete a Wibi table
+      flush-table           - Flush table write-ahead logs
+      layout                - Manage table layouts
+      freshener             - Manage fresheners
+
+      bulk-import           - Bulk import data into a table
+      bulk-load             - Bulk load HFiles into a table
+      increment             - Increment a counter cell
+      put                   - Set the value of a single cell
+      synthesize-user-data  - Synthesize user data into a table
+
+      gather                - Run a WibiGatherer over a table
+      produce               - Run a WibiProducer over a table
+      transform             - Transform data using MapReduce
+      render                - Render data using Wibi visualization
+
+    FLAGS
+
+      The available flags depend on which COMMAND you use.  To see
+      flags for a COMMAND, use --help.  For example:
+
+      $ wibi COMMAND --help
+      </pre>
+    </code>
+
+    <p>The code for your starting point is located in
+    <code>$HOME/wibi-hungry-tutorial</code>. Looking inside that directory, you
+    will see two subdirectories, <code>app</code>
+    and <code>lib</code>. The <code>app</code> directory holds
+    the web application itself, while the <code>lib</code> directory holds WibiData
+    code and configuration files, such as auxiliary code we will use
+    to create some of the tables. The output of the build process will
+    be put in the target subdirectories of <code>app</code> and <code>lib</code>
+    respectively. To build the entire project, run <code>mvn install</code>.</p>
+
+    <code>
+      <pre>
+    $ mvn install
+    ...
+    [INFO] WibiHungry ........................................ SUCCESS [0.696s]
+    [INFO] lib ............................................... SUCCESS [17.203s]
+    [INFO] app ............................................... SUCCESS [11.095s]
+    [INFO] ------------------------------------------------------------------------
+    [INFO] BUILD SUCCESS
+    [INFO] ------------------------------------------------------------------------
+    [INFO] Total time: 29.187s
+    [INFO] Finished at: Sun Jul 29 13:26:05 PDT 2012
+    [INFO] Final Memory: 23M/81M
+    [INFO]
+    ------------------------------------------------------------------------
+      </pre>
+    </code>
+
+    <p>You will see many messages as the install command runs the
+    phases of a Maven build lifecycle. In particular, it will compile
+    the Java sources, run unit tests, and package them into artifacts
+    in the <code>lib/target</code> and <code>app/target</code>
+    directories. Take some time to
+    explore some of the files in the project to familiarize yourself
+    with the code that you're starting with.</p>
+
+    <h4>2. Create the wibi_hungry_dish and wibi_hungry_user tables</h4>
+
+    <p>Let's start by creating two Wibi tables for our application. A
+    dish table we will name <code>wibi_hungry_dish</code> will contain a collection
+    of food dishes and their attributes. A user table we will name
+    <code>wibi_hungry_user</code> will contain information about registered users
+    that have created an account in WibiHungry.</p>
+
+    <p>Wibi tables specify their <i>table layout</i> (<i>families</i>, <i>columns</i>, and
+    <i>locality groups</i>) using an XML file format. You can create a Wibi
+    table by using either the WibiPortal web interface or by writing
+    the XML layout file directly and using command line tools. So you
+    can become familiar with both methods of creating Wibi tables,
+    let's create the dish table using WibiPortal and the user table
+    with the command line tools.</p>
+
+    <h5>Create the wibi_hungry_dish table using the WibiPortal web
+    interface</h5>
+
+    <p>To use the web interface, start WibiPortal and open a web
+    browser to <a href="http://localhost:8123">http://localhost:8123/</a>.</p>
+
+    <code>
+      <pre>
+    $ <b>wibi-portal --port=8123</b>
+    Listening on http://localhost:8123/
+      </pre>
+    </code>
+
+    <p>If you open up your web browser, you'll see the following
+    page:</p>
+
+    <img src="images/image01.png"/>
+
+    <p>Click "Create a table" to design the layout of your new
+    table. Specify the table name, description, and settings as shown
+    below. Click "Add a locality group" to create your first locality
+    group where the data will be stored. Again, choose settings as
+    shown below:</p>
+
+    <img src="images/image04.png"/>
+
+    <p>Locality groups control the physical storage attributes for the
+    data in a Wibi table. Within a locality group, you may create
+    column families. Column families come in two flavors: group and
+    map. A group column family contains an explicit collection of
+    columns each with their own name, description, and schema. A map
+    column family contains an unbounded set of columns keyed by a
+    string, but all values in the map must have the same
+    schema. Columns are addressed/referenced by their family name and
+    column name (sometimes also called a qualifier) name separated by
+    a colon (e.g., <code>family:column</code>). For more information about table
+    layouts, see <a href="https://docs.wibidata.com/releases/wibi/latest/userguide/ch03.html#datasci.layouts">Managing Data: Layouts and Schemas</a> in the WibiData
+    User Guide.</p>
+
+    <p>Let's create an <code>info</code> group column family in the <code>default</code>
+    locality group of the <code>wibi_hungry_dish</code> table to hold basic
+    information about a dish. Click the "Add a Family" button to
+    create the family.</p>
+
+    <p>Finally, use the web interface to add the following columns to
+    the <code>info</code> family:</p>
+
+    <ul>
+      <li>id</li>
+      <li>name</li>
+      <li>description</li>
+      <li>cuisine</li>
+      <li>thumbnail</li>
+      <li>ingredients</li>
+    </ul>
+
+    <p>With the exception of the <code>ingredients</code> column, all of these will
+    be simple strings, so set the schema to <code>inline</code> and its value to
+    <code>"string"</code> (including the quotes). These schemas are expressed using
+    Apache Avro (see the <a href="http://avro.apache.org/docs/current/spec.html#schemas">Avro Specification</a> for information). For the
+    ingredients column, we'll want to store a complex record type. Set
+    the schema to <code>class</code> and use
+    <code>com.wibidata.hungry.avro.DishIngredients</code> as the value. This Avro
+    record is defined in <code>lib/src/main/avro/types.avdl</code>. Feel free to
+    take a peek at the various records we'll be using during this
+    tutorial.</p>
+
+    <p>Here is an example of what the <code>id</code> and <code>ingredients</code> columns
+    should look like.</p>
+
+    <img src="images/image02.png"/>
+
+    <p>When you're finished with all the columns, click "Create." You
+    should see your table listed below the <code>job_history</code> table on the
+    left side of the page.</p>
+
+    <h5>Create the wibi_hungry_user table using the command line
+    interface</h5>
+
+    <p>Anything that can be done in the portal can also be done via
+    command line tools, so let's create the <code>wibi_hungry_user</code> table
+    from the command line. First, we must specify a table layout in
+    XML format. Like with the dish table, we'll create a table with a
+    single locality group called <code>default</code> and a single column family
+    called <code>info</code>. Let's first fetch and save the layout of the
+    <code>wibi_hungry_dish</code> table that you created earlier so we can just
+    copy and edit it to create our <code>wibi_hungry_user</code> layout XML
+    file.</p>
+
+    <code>
+      <pre>
+    $ <b>wibi layout \
+        --table=wibi_hungry_dish \
+        > lib/src/main/layout/wibi_hungry_dish.xml</b>
+      </pre>
+    </code>
+
+    <p>Copy the <code>wibi_hungry_dish.xml</code> file to a new file called
+    <code>wibi_hungry_user.xml</code>. Edit the new file to rename the table and
+    specify 3 string columns in the info family: name, login, and
+    password. To create a table using your new layout, use the <code>wibi
+    create-table</code> command.</p>
+
+    <code>
+      <pre>
+    $ <b>wibi create-table \
+        --table=wibi_hungry_user \
+        --layout=lib/src/main/layout/wibi_hungry_user.xml</b>
+    Parsing table layout: lib/src/main/layout/wibi_hungry_user.xml
+    Creating wibi table: wibi_hungry_user...
+      </pre>
+    </code>
+
+    <p>Check that the tables have been correctly created by running
+    the <code>wibi ls</code> command:</p>
+
+    <code>
+      <pre>
+    $ <b>wibi ls</b>
+    job_history
+    wibi_hungry_dish
+    wibi_hungry_user
+      </pre>
+    </code>
+
+    <p>At any time, you can also export or change the layout using the
+    <code>wibi layout</code> command.</p>
+
+    <code>
+      <pre>
+    $ <b>wibi layout --table=wibi_hungry_user</b>
+    &lt;?xml version="1.0" encoding="UTF-8" standalone="no"?&gt;
+    &lt;layout xmlns="..."&gt;
+    ...
+      </pre>
+    </code>
+
+    <code>
+      <pre>
+    $ <b>wibi layout \
+        --table=wibi_hungry_user \
+        --set=lib/src/main/layout/wibi_hungry_user.xml</b>
+      </pre>
+    </code>
+
+    <p>Note that editing the XML file does not directly affect your
+    Wibi instance; you must rerun the <code>wibi layout --set</code> command to
+    inform WibiData about your changes. Alternatively, you could edit
+    the table layouts directly using the WibiPortal web interface.</p>
+
+    <h4>3. Populate the wibi_hungry_dish table</h4>
+
+    <p>The tables we've created are initially empty. Let's populate
+    the dish table with our data set of dishes from Freebase. The data
+    file has already been put in HDFS for you as
+    <code>/user/wibidata/reebase_dish_json.txt</code>. You can view the first line
+    from this file by using the <code>hadoop fs</code> command.</p>
+
+    <code>
+      <pre>
+    $ <b>hadoop fs -cat freebase_dish_json.txt | head -n 1</b>
+    {"cuisine": "Italian", "details": {"status": "200 OK", "code":
+    "/api/status/ok", "result": {"description": "Minestrone is a thick
+    soup of Italian origin made with vegetables..."}}} ...
+      </pre>
+    </code>
+
+    <p>Each text row of this file is a JSON record. There are many
+    fields in the record, many more than we need. If you ignore the
+    stuff we are not interested in, the first record looks like the
+    following:</p>
+
+    <code>
+      <pre>
+    {
+      "cuisine": "Italian",
+      "details": {
+        "result": {
+          "description": "Minestrone is a thick ..."
+          "thumbnail": "http://api.freebase.com/..."
+          "id": "/en/minestrone"
+        }
+      },
+      "name": "Minestrone",
+      "ingredients": [
+          "Tomato", "Bean", "Parmigiano Reggiano", "Pasta"
+      ]
+    }
+      </pre>
+    </code>
+
+    <p>To import this data into a Wibi table, we need to tell WibiData
+    how to insert records into the columns. We do this by creating a
+    Java class that extends the <i>WibiBulkImporter</i> class. WibiData
+    provides base classes for standard input types, such as
+    <i>TextInputFormat</i>, which treats each line of a text file represents
+    a single record. In the methods that we override, we define how
+    each line of text is converted to a set of writes into the new
+    record. WibiData can then use our implementation to run an
+    efficient import using Hadoop MapReduce.</p>
+
+    <p>In your starter project, you will find an incomplete bulk
+    importer for the dish data in the following location:</p>
+
+    <code>
+      <pre>
+    lib/src/main/java/com/wibidata/hungry/bulkimport/DishBulkImporter.java
+      </pre>
+    </code>
+
+    <p>Open this file in an editor and look at the contents. The bulk
+    importer's produce() method is called for each record in the input
+    file to parse the JSON line and write fields to the dish table. The
+    dish id, name, and ingredients are parsed and written already, but
+    you need to add code to extract and write the dish description,
+    cuisine, and thumbnail URL.</p>
+
+    <p>Your starter project has a unit test included to verify the
+    correctness of your bulk importer, but it is currently
+    disabled. <b>To enable the test, remove the line of code that starts
+    with "<code>@Ignore</code>" from
+    <code>lib/src/test/java/com/wibidata/hungry/bulkimport/TestDishBulkImporter.java</code></b>. To
+    run the test:</p>
+
+    <code>
+      <pre>
+    <i>(from the lib directory)</i>
+    $ <b>mvn test -Dtest=TestDishBulkImporter</b>
+      </pre>
+    </code>
+
+    <p>Test failures will be printed to the console with a line number.</p>
+
+    <p>Open the <code>DishBulkImporter.java</code> file and examine it. Complete
+    the code to satisfy the unit test by finishing the sections marked
+    "<code>TODO</code>". Re-run the test until there are no errors (it will say
+    <code>BUILD SUCCESS</code>).</p>
+
+    <p>When you are confident that the bulk importer is correct,
+    compile and package it into a Java jar file:</p>
+
+    <code>
+      <pre>
+    <i>(from the lib directory)</i>
+    $ <b>mvn package</b>
+      </pre>
+    </code>
+
+    <p>This will run the maven build lifecycle up until the packaging
+    phase, which will run all of your project unit tests again. If
+    successful, the above command will create the jar file</p>
+
+    <code>
+      <pre>
+    lib/target/lib-1.0.0-SNAPSHOT-jar-with-dependencies.jar
+      </pre>
+    </code>
+
+    <p>To run your bulk importer over the <code>freebase_dish_json.txt</code> file
+    into the <code>wibi_hungry_dish</code> table, use the <code>wibi bulk-import</code>
+    command:</p>
+
+    <code>
+      <pre>
+    <i>(from the lib directory)</i>
+    $ <b>WIBI_CLASSPATH=target/lib-1.0.0-SNAPSHOT-jar-with-dependencies.jar \
+        wibi bulk-import \
+        --importer=com.wibidata.hungry.bulkimport.DishBulkImporter \
+        --input=text:freebase_dish_json.txt \
+        --output=wibi:wibi_hungry_dish@0 \
+        --table=wibi_hungry_dish</b>
+      </pre>
+    </code>
+
+    <p>This command will start a Hadoop MapReduce job, executing your
+    bulk importer over the data file records in parallel. While this
+    command is running, you can check detailed status of the job using
+    the Hadoop JobTracker Status Page
+    at <a href="http://localhost:50030/">http://localhost:50030</a>. If
+    your job is successful, check that the
+    <code>BULKIMPORTER_RECORDS_PROCESSED</code> counter is <code>103</code> (counters are
+    printed to the console when the job completes).</p>
+
+    <p>You can verify that the data was successfully imported using
+    the <code>wibi ls</code> command.</p>
+
+    <code>
+      <pre>
+    $ <b>wibi ls --table=wibi_hungry_dish --max-rows=10</b>
+    0219537fb5cb9329253bfb23f3db861b [1342329022522] info:id
+                                     /en/rhubarb_pie
+    0219537fb5cb9329253bfb23f3db861b [1342329022522] info:name
+                                     Rhubarb pie
+    0219537fb5cb9329253bfb23f3db861b [1342329022522] info:description
+                                     Rhubarb pie is a pie which is particularly popular...
+    0219537fb5cb9329253bfb23f3db861b [1342329022522] info:thumbnail
+                                     http://api.freebase.com/api/trans/image_thumb/en/rhubarb_pie
+    0219537fb5cb9329253bfb23f3db861b [1342329022522] info:ingredients
+                                     {"ingredients": [{"name": "Sugar"}, {"name": "Rhubarb"}]}
+      </pre>
+    </code>
+
+    <h4>4. Create the wibi_hungry_category table</h4>
+
+    <p>To allow users to find dishes they like, we want to organize
+    the dishes by cuisine. However, our <code>wibi_hungry_dish</code> table is
+    keyed and sorted by the dish identifier (e.g.,
+    "/en/chocolate_brownie"). It would not be possible to find all
+    dishes from the chinese cuisine without scanning through the
+    entire table, which is presumably too large to do each time the
+    web application displays the "Browse" feature. Instead, we will
+    precompute a directory of dishes indexed by cuisine using a
+    gatherer. We will store this directory in the <code>wibi_hungry_category</code>
+    table, such that each row in the table will represent a single
+    cuisine. A single column in the table will hold the dishes in the
+    cuisine.</p>
+
+    <p>If you look at the layout file
+    <code>lib/src/main/layout/wibi_hungry_category.xml</code>, you will find that
+    there is only a single column definition:</p>
+
+    <code>
+      <pre>
+    &lt;column&gt;
+      &lt;name&gt;dish&lt;/name&gt;
+      &lt;description&gt;Category and related dishes&lt;/description&gt;
+      &lt;schema type="class"&gt;com.wibidata.core.client.avro.Node&lt;/schema&gt;
+    &lt;/column&gt;
+      </pre>
+    </code>
+
+    <p>Notice that the dishes are stored in a class called Node, and
+    the description suggests that it contains a complex structure: the
+    category and the related dishes. Many of the techniques we want to
+    use for recommendations are based on graph algorithms, and
+    WibiData has support for graphs, making it both easy and efficient
+    to do operations on them. We will use graphs to represent entities
+    and relationships between them. In this case, we represent the
+    cuisine-dish relationship by a very small graph (a graphlet), with
+    a root node for each cuisine and edges to dish nodes. For
+    example:</p>
+
+    <img src="images/image03.png" style="width: 210px"/>
+
+    <p>Within a node, we can store complex information. In our case,
+    since we want to be able to display a dish attractively in the
+    web application &mdash; with thumbnail and possibly some of the
+    description &mdash; we will copy that information from the
+    <code>wibi_hungry_dish</code> table into the dish nodes in the
+    <code>wibi_hungry_category</code> table. By doing this, the web application
+    can display the dishes using only information from the category
+    table, avoiding further lookups to the dish table.</p>
+
+    <p>Use the Wibi command line tools to create the
+    <code>wibi_hungry_category</code> table from the layout file, just as we did in
+    the previous section (<code>wibi create-table</code>).</p>
+
+    <h4>5. Index the dishes by cuisine</h4>
+
+    <p>We will generate the contents of with <code>wibi_hungry_category</code>
+    table by writing a gatherer to "pivot" information from the
+    <code>wibi_hungry_dish</code> table.</p>
+
+    <p>To do the pivot, we need to write a MapReduce job that scans
+    the data in the <code>wibi_hungry_dish</code> table and produces key-value
+    pairs as output. WibiData simplifies this process into the concept
+    of a gatherer (and usually using a standard pre-defined
+    reducer). Often, especially when you are working with graph data,
+    you can extend one of the existing gatherers to be run with the
+    <i>MergeNodeReducer</i> to compute relationships between entities in a
+    graph with very little code.</p>
+
+    <p>Our strategy will be to run a <i>WibiGatherer</i> that generates
+    graphlets, each of which represents the relationship between a
+    cuisine and a single dish (left side of the diagram below). We
+    will then use a <i>MergeNodeReducer</i> to produce our desired graphlet
+    (right side of the diagram below), which is what will be stored in
+    the <code>wibi_hungry_category</code> table.</p>
+
+    <img src="images/image06.png" style="width: 450px"/>
+
+    <p>Our gatherer needs to generate a two-node graphlet that maps
+    from a cuisine to a dish. The file
+    <code>lib/src/main/java/com/wibidata/hungry/gather/DishesByCuisineGatherer.java</code>
+    does just that. Let's look at some of the methods:</p>
+
+    <p>The first method is an override of <i>getDataRequest()</i>. This
+    method constructs a <i>WibiDataRequest</i> that defines the fields that
+    the gatherer will operate over. Note that no table name is
+    specified in the request, only family-column name pairs; the table
+    name will be supplied when the gatherer is run.</p>
+
+    <code>
+      <pre>
+    @Override
+    public WibiDataRequest getDataRequest() {
+      return new WibiDataRequest()
+          .addColumn(new WibiDataRequest.Column("info", "id"))
+          .addColumn(new WibiDataRequest.Column("info", "name"))
+          .addColumn(new WibiDataRequest.Column("info", "description"))
+          .addColumn(new WibiDataRequest.Column("info", "cuisine"))
+         .addColumn(new WibiDataRequest.Column("info", "thumbnail"));
+    }
+      </pre>
+    </code>
+
+    <p>The next method, <i>gather()</i>, does the main work of computing the
+    result we want for each row:</p>
+
+    <code>
+      <pre>
+    @Override
+    public void gather(WibiRowData input, Context context)
+        throws IOException, InterruptedException {
+      if (!input.containsColumn("info", "id")
+          || !input.containsColumn("info", "cuisine")
+          || !input.containsColumn("info", "description")
+          || !input.containsColumn("info", "name")
+          || !input.containsColumn("info", "thumbnail")) {
+        context.getCounter(Counters.MISSING_FIELDS).increment(1);
+        return;
+      }
+
+      if (input.getStringValue("info", "cuisine").toString().isEmpty()) {
+        context.getCounter(Counters.CUISINE_EMPTY).increment(1);
+        return;
+      }
+
+      NodeBuilder node =
+           new NodeBuilder("cuisine:" + input.getStringValue("info", "cuisine"));
+
+      node.addEdge().target(input.getStringValue("info", "id"))
+          .addAnnotation("name", input.getStringValue("info", "name"))
+          .addAnnotation("description", input.getStringValue("info", "description"))
+          .addAnnotation("thumbnail", input.getStringValue("info", "thumbnail"));
+
+      write(node.build(), context);
+    }
+      </pre>
+    </code>
+
+    <p>The first two if statements ignore all dishes that are missing
+    any fields; we skip those since we won't want to display them on
+    the home page anyway. The next two statements create the
+    graphlet. See
+    the <a href="https://docs.wibidata.com/releases/wibi/latest/apidocs/com/wibidata/core/client/lib/graph/NodeBuilder.html">NodeBuilder</a>
+    and <a href="https://docs.wibidata.com/releases/wibi/latest/apidocs/com/wibidata/core/client/lib/graph/EdgeBuilder.html">EdgeBuilder</a> documentation for
+    details.</p>
+
+    <p>The write statement defines the output of the gatherer. This is
+    a very simple <i>WibiGatherer</i> because we don't need to do any complex
+    computation and most of the data structure manipulation is already
+    done for us.</p>
+
+    <p>The final method <i>run()</i> will build and invoke the MapReduce job
+    to execute this gatherer. Alternatively, we could use the wibi
+    command line as we did for the bulk import.</p>
+
+    <code>
+      <pre>
+    @Override
+    public int run(String[] args) throws Exception {
+      Wibi wibi = Wibi.open(
+          new WibiConfiguration(getConf(),WibiConfiguration.DEFAULT_INSTANCE_NAME));
+      WibiTable dishTable = WibiTable.open(wibi, "wibi_hungry_dish");
+      WibiTable categoryTable = WibiTable.open(wibi, "wibi_hungry_category");
+
+      try {
+        MapReduceJob job = new WibiGatherJobBuilder()
+            .withInputTable(dishTable)
+            .withGatherer(DishesByCuisineGatherer.class)
+            .withReducer(KeepAnnotationsMergeNodeReducer.class)
+            .withOutput(
+                new WibiColumnMapReduceJobOutput(categoryTable, "related", "dish", 1))
+            .build();
+        return job.run() ? 0 : 1;
+      } finally {
+        IOUtils.closeQuietly(categoryTable);
+        IOUtils.closeQuietly(dishTable);
+        IOUtils.closeQuietly(wibi);
+      }
+    }
+      </pre>
+    </code>
+
+    <p>The <code>DishesByCuisineGatherer.java</code> file is complete, no
+    modifications by you are necessary. To run the main method of
+    this Java class, use the <code>wibi jar</code> command:</p>
+
+    <code>
+      <pre>
+    <i>(from the lib directory)</i>
+    $ <b>wibi jar target/lib-1.0.0-SNAPSHOT-jar-with-dependencies.jar \
+        com.wibidata.hungry.gather.DishesByCuisineGatherer</b>
+      </pre>
+    </code>
+
+    <p>You can check the status of the job using the MapReduce
+    JobTracker Status Page at <a href="http://localhost:50030">http://localhost:50030/</a>. When the job is
+    complete, you can verify that the data was written to the
+    <code>wibi_hungry_category</code> table with a <code>wibi ls</code> command:</p>
+
+    <code>
+      <pre>
+    $ <b>wibi ls --table=wibi_hungry_category --entity-id=cuisine:italian</b>
+      </pre>
+    </code>
+
+    <p>You should see information about Risotto and Minestrone printed
+    to the console.</p>
+
+    <h4>6. Start the web application</h4>
+
+    <p>Now we are going to turn to the web application itself. It is
+    constructed as a servlet application. The relevant code lives in
+    these two directories:</p>
+
+    <code>
+      <pre>
+    app/src/main/java/com/wibidata/hungry/model
+    app/src/main/java/com/wibidata/hungry/servlet
+      </pre>
+    </code>
+
+    <p>The servlet directory has the classes that represent the
+    interaction pages of the application and the model directory has
+    classes that represent the in-memory version of the data we are
+    displaying. Take some time to explore the code in the app
+    directory to understand how the web application is structured.</p>
+
+    <p>Before we start modifying the application, let's run what we
+    already have. To make sure everything is built first:</p>
+
+    <code>
+      <pre>
+    <i>(from the top level directory)</i>
+    $ <b>mvn install</b>
+      </pre>
+    </code>
+
+    <p>To start the application, change directory to the app
+    directory, and launch the app by running the following Maven
+    command:</p>
+
+    <code>
+      <pre>
+    <i>(from the app directory)</i>
+    $ <b>mvn jetty:run</b>
+      </pre>
+    </code>
+
+    <p>By default, the application will be listening on port
+    8080. If that creates a conflict in your environment, you can
+    set an alternate port by adding the parameter
+    <code>-Djetty.port=<i>portno</i></code>.</p>
+
+    <p>Point your browser
+    to <a href="http://localhost:8080">http://localhost:8080</a> (or
+    whichever port
+    you configured). You should see a page welcoming you to add an
+    account. Go ahead and do that and check that the login and logout
+    buttons work. There won't be any content in the "Browse dishes by
+    cuisine" section, but we'll take care of that next. Here's what
+    you'll see so far:</p>
+
+    <img src="images/image14.png"/>
+
+    <h4>7. Display the dishes by cuisine</h4>
+
+    <p>The code that generates content for the main page is in
+    <code>app/src/main/java/com/wibidata/hungry/servlet/HomePageServlet.java</code>. The
+    current implementation creates an empty list of Cuisine objects
+    and forwards that to the Home Page JSP
+    (<code>app/src/main/webapp/WEB-INF/view/HomePage.jsp</code>). We need to
+    populate the list using the data from the category table.</p>
+
+    <p>To do this we need to:</p>
+
+    <ul>
+      <li>Open a connection to the <code>wibi_hungry_category</code> table.</li>
+      <li>Create a <i>WibiTableReader</i> to read the table</li>
+      <li>Build a <i>WibiDataRequest</i> to specify which columns we want to
+      access, and</li>
+      <li>Use a <i>WibiRowScanner</i> to actually read the data.</li>
+      <li>For each row in the table, unpack the data into a <i>Cuisine</i>
+      object.</li>
+    </ul>
+
+    <p>When we are done, we need to close the table, reader and
+    scanner to avoid leaking resources.</p>
+
+    <p>If you put it together, the code looks like this:</p>
+
+    <code>
+      <pre>
+    <b>List&lt;Cuisine&gt; cuisines = new ArrayList&lt;Cuisine&gt;();</b>
+    final WibiTable categoryTable = WibiTable.open(wibi, "wibi_hungry_category");
+    final WibiTableReader reader = new LocalWibiTableReader(categoryTable);
+    WibiRowScanner scanner = null;
+
+    try {
+      WibiDataRequest dataRequest = new WibiDataRequest()
+          .addColumn(new WibiDataRequest.Column("related", "dish"));
+      scanner = reader.getScanner(dataRequest,
+          categoryTable.getEntityId("cuisine:"), categoryTable.getEntityId("cuisine;"));
+      for (WibiRowData row : scanner) {
+        if (row.containsColumn("related", "dish")) {
+          <b>Cuisine cuisine =
+              Cuisine.fromDishes(row.getValue("related", "dish", Node.class));
+          cuisines.add(cuisine);</b>
+        }
+      }
+    } catch (WibiDataRequestException e) {
+      throw new IOException(e);
+    } finally {
+      IOUtils.closeQuietly(scanner);
+      IOUtils.closeQuietly(reader);
+      IOUtils.closeQuietly(categoryTable);
+    }
+    <b>request.setAttribute("cuisines", cuisines);</b>
+      </pre>
+    </code>
+
+    <p>To fully understand what is happening here, you should also
+    take a look at
+    <i>app/src/main/java/com/wibidata/hungry/model/Cuisine.java</i> which
+    shows how the graphlet is unpacked into the Cuisine and Dish data
+    structures. The classes inside the model directory of the web
+    application are the in-memory Java beans that represent the Model
+    component of
+    an <a href="http://en.wikipedia.org/wiki/Model-view-controller">MVC
+    architecture</a>. The controller code in the
+    servlet is responsible for updating these model classes upon
+    receiving the HTTP request and inserting them into attributes of
+    the request. These models in the request are available to the
+    Views (the JSP files) during rendering. Consider the following
+    line from <code>HomePageServlet.java</code>:</p>
+
+    <code>
+      <pre>
+    request.setAttribute("cuisines", cuisines);
+      </pre>
+    </code>
+
+    <p>This makes the list of cuisines available in a request
+    attribute called "cuisines". If you take look at <code>HomePage.jsp</code>,
+    you'll see that it reads the cuisines for rendering using the
+    <code>${cuisines}</code> syntax.</p>
+
+    <code>
+      <pre>
+    <b>&lt;c:forEach var="cuisine" items="${cuisines}"&gt;</b>
+      &lt;c:if test="${fn:length(cuisine.dishes) ge 3}"&gt;
+        &lt;h3 class="cuisine-name"&gt;${cuisine.name}&lt;/h3&gt;
+        &lt;div class="row cuisine" style="clear:both"&gt;
+          <b>&lt;c:forEach var="dish" items="${cuisine.dishes}"&gt;</b>
+            &lt;div class="span4"&gt;
+              &lt;div class="well dish" onclick="location = '/dish?id=<b>${dish.id}</b>'"
+                   title="View <b>${fn:toLowerCase(dish.name)}</b> details"&gt;
+                &lt;h4&gt;<b>${dish.name}</b>&lt;/h4&gt;
+                &lt;div class="thumbnail" style="float:right"&gt;
+                  &lt;img src="<b>${dish.thumbnail}</b>"/&gt;
+                &lt;/div&gt;
+                &lt;p class="description"&gt;
+                  <b>${dish.description}</b>
+                &lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          <b>&lt;/c:forEach&gt;</b>
+        &lt;/div&gt;
+      &lt;/c:if&gt;
+    <b>&lt;/c:forEach&gt;</b>
+      </pre>
+    </code>
+
+    <p>When the JSP calls something like <code>${cuisine.name}</code>, the servlet
+    framework will call the Java bean method <i>Cuisine.getName()</i>.</p>
+
+    <p><b>Add code to the <i>doGet()</i> method in
+    <code>app/src/main/java/com/wibidata/hungry/servlet/HomePageServlet.java</code>
+    to read the dishes organized by cuisine so they are available to
+    <code>HomePage.jsp</code> for rendering.</b></p>
+
+    <p><b>Recompile the application using mvn compile from the app
+    directory</b>. You can press Enter in your running jetty console to
+    reload your new code. When you press reload in your browser, you
+    should now see the dishes organized by cuisine in the
+    application. Here's a screenshot of the desired result:</p>
+
+    <img src="images/image10.png"/>
+
+    <p>If you feel like altering the look of the page, you will find
+    that code in <code>app/src/main/webapp/WEB-INF/view/HomePage.jsp.</code></p>
+
+    <h4>8. Display dish details</h4>
+
+    <p>When the user clicks on a dish, we want to display the details
+    of the dish (if you do so now, you'll see a blank page). The
+    identifier of the dish is passed as a parameter to the dish
+    servlet
+    (<code>app/src/main/java/com/wibidata/hungry/servlet/DishServlet.java</code>). Given
+    the identifier (id) of a dish, your web application will need to
+    display details such as the name, description, and
+    ingredients. Since all of the dish information is stored in a
+    single row of a WibiTable, this lookup can be done with very low
+    latency. To read data from a single row in a WibiTable, we use a
+    <i>WibiTableReader</i> and the method <i>get()</i>. For example:</p>
+
+    <code>
+      <pre>
+	  WibiRowData row = reader.get(dishTable.getEntityId(dishId), dataRequest);
+      </pre>
+    </code>
+
+    <p><b>Fill in the code in <code>.../servlet/DishServlet.java</code> to populate
+    the Dish model and store it in the request for rendering.</b></p>
+
+    <p>You will need to create an instance of
+    <code>com.wibidata.hungry.model.Dish</code> and call its setter methods to
+    populate the name, description, thumbnail, etc. Store this model
+    in a request attribute called "dish" so it is available to the
+    view (<code>app/src/main/webapp/WEB-INF/view/Dish.jsp</code>). You may use the
+    <i>getIngredients()</i> method at the end of the file to create a list of
+    Ingredient model objects from the DishIngredients Avro
+    record. Refer to the WibiData
+    Java <a href="https://docs.wibidata.com/releases/wibi/latest/apidocs/">API
+    documentation</a> as needed.</p>
+
+    <h4>9. Write ratings to the wibi_hungry_user table</h4>
+
+    <p>Up until now, our content has been static. Now we will allow
+    users to rate dishes and store those ratings in the
+    <code>wibi_hungry_user</code> table. The relationship between users and the
+    dishes they have rated will be sparse (we assume that both the
+    list of users and the list of dishes could get quite large), so we
+    want an efficient way to store it. WibiData's map-type column
+    family allow you to do this.</p>
+
+    <p>The XML layout for a map family looks like this:</p>
+
+    <code>
+      <pre>
+    &lt;family type="map" localityGroup="default"&gt;
+      &lt;name&gt;rating&lt;/name&gt;
+      &lt;description&gt;The user's ratings on dishes.&lt;/description&gt;
+      &lt;schema type="class"&gt;com.wibidata.hungry.avro.DishRating&lt;/schema&gt;
+    &lt;/family&gt;
+      </pre>
+    </code>
+
+    <p>Note that the Map is a "family" in its own right, rather than
+    being nested within another family as the other columns we have
+    seen. This reflects the underlying implementation, where the
+    individual map keys behave very similarly to string-typed columns
+    &mdash; albeit columns in a dynamic namespace. As a consequence, the
+    same methods we have used previously to access data from a
+    <i>WibiRowData</i> also work for Maps:</p>
+
+    <code>
+      <pre>
+    row.getValue("related", "dish", Node.class) // column value in a group
+    row.getValue("rating", "/en/minestrone", DishRating.class) // map value
+      </pre>
+    </code>
+
+    <p><b>Add our new map family to the <code>wibi_hungry_user</code>
+    table by adding the above XML to the layout at
+    <code>lib/src/main/layout/wibi_hungry_user.xml</code> and then
+    using the wibi layout command to change the table.</b></p>
+
+    <p>Now we need to add the code to the application to track users'
+    dish ratings and store them into this map. When the user clicks on
+    one of the ratings buttons, the application is already wired to
+    pass a parameter to the <i>DishServlet</i> containing that rating as a
+    numerical value. The data type we store is a <i>DishRating</i>
+    record.</p>
+
+    <p><b>Modify the code in <code>servlet/DishServlet.java</code> to write the user
+    rating to the <code>wibi_hungry_user</code> table.</b></p>
+
+    <p>Rerun and launch the application, and rate a few dishes. You
+    can see the ratings that have been added by running the following
+    command:</p>
+
+    <code>
+      <pre>
+    $ <b>wibi ls --table=wibi_hungry_user</b>
+      </pre>
+    </code>
+
+    <p>You should see your account and a list of dishes that you have
+    rated.</p>
+
+    <h4>10. Compute a user's favorite ingredients</h4>
+
+    <p>We now want to modify the WibiHungry home page, so that logged
+    users will see a list of their favorite ingredients based on the
+    dishes they have rated. One simple algorithm for computing such a
+    list of ingredients is:</p>
+
+    <ol>
+      <li>Retrieve the list of recent dishes the user has rated positively.</li>
+      <li>For each positively rated dish, find its ingredients.</li>
+      <li>Return a weighted vector of ingredients (a higher weight means more
+      dishes the user liked contained the ingredient).</li>
+    </ol>
+
+    <p>We can use a <i>WibiProducer</i> to express this algorithm. A
+    <i>WibiProducer</i> is similar to a <i>WibiGatherer</i>, but the results of the
+    computation are stored back into the row that produced them.</p>
+
+    <p>Producers can be run in two distinct contexts:</p>
+
+    <ol>
+      <li>Batch: Run the producer over every row of a table,
+      leveraging the scalability and throughput of MapReduce.</li>
+      <li>Real time: Run the producer on-demand at the time the result
+      of the computation is requested for a single row (e.g. in this
+      case, when the application attempts to retrieve the list of
+      favorite ingredients for a particular user). Note that the
+      result is still stored back into the row, and will be retrieved
+      from there next time it is requested (we'll get to how we
+      control the lifetime of this data in the next section).</li>
+    </ol>
+
+    <p>For the WibiHungry application, the real time context is
+    particularly advantageous for a couple reasons:</p>
+
+    <ol>
+      <li>A user's favorite ingredients will be fresh every time,
+      considering all ratings up to the current instant.</li>
+      <li>Your systems won't waste resources computing favorite
+      ingredients for the registered users who won't visit the
+      WibiHungry home page today.</li>
+    </ol>
+
+    <p>To implement this, you need to do several things:</p>
+
+    <ul>
+      <li>Add columns to the user table to store favorite ingredients</li>
+      <li>Implement a WibiProducer to compute favorite ingredients</li>
+      <li>Configure WibiData to use that producer to compute favorite
+      ingredients in real time.</li>
+      <li>Add the code to the application to fetch the favorite
+      ingredients for display.</li>
+    </ul>
+
+    <p>We'll do the first two of these in this step, and the latter
+    two in steps 11 and 12.</p>
+
+    <h5>Add a column</h5>
+
+    <p><b>Add a column to the <code>wibi_hungry_user</code> table named
+    <code>personalization:favorite_ingredients</code> with type
+    <code>com.wibidata.hungry.avro.FavoriteIngredients</code></b>. If you use the
+    WibiPortal, you may want to export the resulting layout XML for
+    reference using the <code>wibi layout</code> command.</p>
+
+    <h5>Implement a WibiProducer</h5>
+
+    <p>A starter implementation of the producer is located in
+    <code>lib/src/main/java/com/wibidata/hungry/produce/FavoriteIngredientsProducer.java</code>. We
+    will go over the main methods and what they are accomplishing
+    here:</p>
+
+    <p>Every producer needs to indicate which input columns it uses
+    and which column it produces; this is accomplished by overriding
+    <i>getDataRequest()</i> and <i>getOutputColumn()</i> respectively. There is a
+    new feature in the implementation of <i>getDataRequest()</i> that we have
+    not seen before:</p>
+
+    <code>
+      <pre>
+    new WibiDataRequest()
+        .addColumn(new WibiDataRequest.Column("rating"))
+        .withTimeRange(min, max);
+      </pre>
+    </code>
+
+    <p>Data in Wibi tables is stored with a timestamp. Using the
+    settings of a locality group, an entire history of values may be
+    maintained. By default, a request simply retrieves the most recent
+    value, whenever it might have been set. By calling the
+    <i>withTimeRange()</i> method, we are asking to retrieve cells only
+    within the specified time range. In this case we still only care
+    about the most recent rating, but we want to exclude ratings that
+    were set a long time ago.</p>
+
+    <p>The next thing you will see in the file is the
+    <i>getRequiredStores()</i> method. It declares what KeyValueStores the
+    producer requires. KeyValueStores are an important abstraction
+    provided by WibiData that gives your application two major
+    benefits:</p>
+
+    <ol>
+      <li>Flexibility - By declaring that a producer requires a key
+      value store, you can use the WibiData framework to bind the
+      lookups to the store to a physical implementation at
+      runtime. This makes it possible to experiment with different
+      data sets stored in varying locations without changing any
+      code.</li>
+      <li>Efficiency - When running this producer over the entire set
+      of users, it will fetch the dishes that each user rated, and for
+      each dish positively rated dish, it will fetch the
+      ingredients. Since many users will rate the same dishes, we
+      expect to fetch the same data many times. KeyValueStore
+      implementations cache lookups to avoid unnecessary disk or
+      network IO.</li>
+    </ol>
+
+    <p>The method <i>getIngredients()</i> at the bottom of the file shows how
+    lookups to the KeyValueStore are performed. For more information
+    on how to use KeyValueStores, see <a href="https://docs.wibidata.com/releases/wibi/latest/userguide/ch03.html#d4e573">Accessing External Data:
+    KeyValueStores</a> in the WibiData User guide.</p>
+
+    <p>The code that computes the new column data is contained in the
+    <i>produce()</i> method. <b>Complete the <i>produce()</i> method.</b></p>
+
+    <p><b>Delete the @Ignore line from
+    <code>lib/src/test/java/com/wibidata/hungry/produce/TestFavoriteIngredientsProducer.java</code>
+    to enable the unit test</b>. Run the unit test with the following
+    command.</p>
+
+    <code>
+      <pre>
+    <i>(from the lib directory)</i>
+    $ <b>mvn test -Dtest=TestFavoriteIngredientsProducer</b>
+      </pre>
+    </code>
+
+    <p>Continue working on your producer until the unit test
+    passes.</p>
+
+    <h4>11. Configure the ingredient producer to run with a freshness policy</h4>
+
+    <p>Instead of periodically running a batch MapReduce job over the
+    <code>wibi_hungry_user</code> table to populate the <code>favorite_ingredients</code>
+    column, let's compute this on-demand by configuring a
+    WibiFreshener with WibiData.</p>
+
+    <p>When a client like the WibiHungry application makes a request
+    to read from WibiData, a lot happens behind the scenes. WibiData
+    checks its configuration for any fresheners that have been
+    attached to columns in the request. If any freshener configuration
+    is found, its <i>WibiFreshnessPolicy</i> is instantiated. WibiData gives
+    the freshness policy the opportunity to check the data for
+    freshness. If the policy reports that the data is fresh, the data
+    that is stored is immediately returned to the client. If the
+    policy reports the the data is stale (not fresh), the configured
+    producer is instantiated to run on the requested row, producing a
+    new result. The produced data is written back to the WibiTable and
+    returned to the client simultaneously. If the request deadline is
+    exceeded at any time, WibiData interrupts this entire lifecycle
+    and returns the stale data to the client. WibiData continues to
+    run any producers in the background so future request will be
+    fresh.</p>
+
+    <p>To attach a freshener configuration to a column, use the <code>wibi
+    freshener</code> command. You must specify the configuration in an XML
+    file. If you are familiar with Hadoop and HBase configuration, the
+    file format is the same. Any configuration variables in the XML
+    file will be available to the WibiProducer via its getConf()
+    method. Take a look at the configuration for our
+    FavoriteIngredients freshener, which is in
+    <code>lib/src/main/freshen/favorite_ingredients.xml</code>.</p>
+
+    <p>You can attach the freshener with the <code>wibi freshener</code> command:</p>
+
+    <code>
+      <pre>
+    $ <b>wibi freshener \
+        --table=wibi_hungry_user \
+        --column=personalization:favorite_ingredients \
+        --op=attach \
+        --conf=lib/src/main/freshen/favorite_ingredients.xml</b>
+      </pre>
+    </code>
+
+    <p>You can view attached fresheners for a table by using a similar
+    command:</p>
+
+    <code>
+      <pre>
+    $ <b>wibi freshener --table=wibi_hungry_user --op=list</b>
+      </pre>
+    </code>
+
+    <h4>12. Display the user's favorite ingredients</h4>
+
+    <p>Since the configuration for real-time freshening has been done
+    within WibiData, it is almost invisible to the web
+    application. Let's try this out by adding the following code to
+    the <i>doGet()</i> method in <code>servlet/HomePageServlet.java</code>:</p>
+
+    <code>
+      <pre>
+    // Set the favorite ingredients of the current user
+    final WibiTable userTable = WibiTable.open(wibi, "wibi_hungry_user");
+    WibiTableReader favoritesReader = null;
+    try {
+      favoritesReader = new LocalWibiTableReader(userTable);
+      EntityId entityId = userTable.getEntityId(login);
+      WibiDataRequest dataRequest = new WibiDataRequest()
+          .addColumn(new WibiDataRequest.Column("info", "favorite_ingredients"));
+       WibiRowData row = favoritesReader.get(entityId, dataRequest);
+      if (row.containsColumn("info", "favorite_ingredients")) {
+        request.setAttribute("favoriteIngredients",
+            row.getValue("personalization", "favorite_ingredients",
+                FavoriteIngredients.class).getIngredients());
+      }
+    } catch (WibiDataRequestException e) {
+      throw new IOException(e);
+    } finally {
+      IOUtils.closeQuietly(userTable);
+      IOUtils.closeQuietly(favoritesReader);
+    }
+      </pre>
+    </code>
+
+    <p>Compile and launch the application as usual. When you log in
+    and go to the home page, there are no favorite ingredients. What
+    happened?</p>
+
+    <p>The problem is that by default, freshening is turned off, since
+    it can be a very expensive operation. By default, a client that
+    fetches data will only see the last value written. To enable the
+    freshener to run, the client has to enable freshening in the
+    WibiDataRequest. <b>Enable freshening by calling
+    <i>withFresheningEnabled()</i> on <i>WibiDataRequest.Column</i></b>. Recompile and
+    reload your web application; you should see a list of your
+    favorite ingredients on the side of the page after logging in.</p>
+
+    <h4>13. Write a gatherer to index dishes by ingredient</h4>
+
+    <p>Gathering dishes by ingredient from the <code>wibi_hungry_dish</code> table
+    should look very similar to the <code>DishesByCuisineGatherer</code> we
+    implemented previously. The goal is to create mapping from
+    ingredients to dishes to be stored in the <code>wibi_hungry_category</code>
+    table. Once we have that, in the next step, we'll write a
+    recommendations producer that needs to look up dishes based on a
+    user's favorite ingredients, so it will need this mapping.</p>
+
+    <p>Create a gatherer in your own file; in keeping with the
+    conventions used in the rest of this document, it would reside
+    in
+    <code>lib/src/main/java/com/wibidata/hungry/gather/DishesByIngredientGatherer.java</code>. Be
+    sure to also add the matching unit test as well. See the
+    <a href="https://docs.wibidata.com/releases/wibi/latest/userguide/ch03.html#d4e493">WibiGathererTester</a> section of the WibiData User Guide for more
+    information.</p>
+
+    <p>Instead of running this gatherer using the wibi gather command,
+    write a program to launch the MapReduce job using a
+    <i>WibiGatherJobBuilder</i>. You can write the output from the gatherer
+    directly to the <code>wibi_hungry_category</code> table using the
+    <i>WibiColumnMapReduceJobOutput</i>. Here is an example:</p>
+
+    <code>
+      <pre>
+    WibiTable dishTable = null;
+    WibiTable categoryTable = null;
+    try {
+      dishTable = WibiTable.open(getWibi(), "wibi-hungry-dish");
+      categoryTable = WibiTable.open(getWibi(), "wibi-hungry-category");
+      MapReduceJob job = new WibiGatherJobBuilder()
+          .withInputTable(dishTable)
+          .withGatherer(DishesByIngredientGatherer.class)
+          .withReducer(MergeNodeReducer.class)
+          .withOutput(new WibiColumnMapReduceJobOutput(
+              categoryTable, "related", "dish", 1))
+          .addJarDirectory(new File(System.getenv("WIBI_HOME"), "lib"))
+          .build();
+      setSuccess(job.run());
+    } finally {
+      IOUtils.closeQuietly(dishTable);
+      IOUtils.closeQuietly(categoryTable);
+    }
+      </pre>
+    </code>
+
+    <p>When you are convinced that your gatherer is correct, run your
+    gatherer over the dish table to populate the category table using
+    the wibi jar command.</p>
+
+    <code>
+      <pre>
+    <i>(from the lib directory)</i>
+    $ <b>wibi jar target/lib-1.0.0-SNAPSHOT-jar-with-dependencies.jar \
+        com.wibidata.hungry.gather.DishesByIngredientGatherer</b>
+      </pre>
+    </code>
+
+    <p>Verify that the data was generated using the <code>wibi ls</code>
+    command.</p>
+
+    <h4>14. Write a producer to compute a user's recommended dishes</h4>
+
+    <p>Recommendations producers require very little code in WibiData,
+    since there are several implementations of WibiProducers you can
+    extend to do most of the work. You'll just have to override
+    methods in the extended producers to fill in the blanks. We'll use
+    the <i>SumPathNaiveRecommendationsProducer</i> for this task, which will
+    require some explanation.</p>
+
+    <p>To produce recommendations for a user:</p>
+
+    <ol>
+      <li>
+        <p>Represent the user as a node in a graph. Create a node for
+        each of the user's favorite ingredients. Connect the user node
+        to each ingredient node with an edge weighted by affinity the
+        user has for the ingredient.</p>
+
+        <img src="images/image09.png" style="width: 200px"/>
+      </li>
+      <li>
+        <p>For each ingredient node in the graph, find the dishes that
+        contain that ingredient. Create a node for each dish. Connect
+          the ingredient to each dish with an edge with weight <code>1.0</code>.</p>
+
+        <img src="images/image08.png" style="width: 380px"/>
+      </li>
+      <li>
+        <p>For each unique dish in the graph, sum the weights along all
+        paths from the user node. Use this value as the score for the
+        dish.</p>
+
+        <img src="images/image11.png" style="width: 500px"/>
+      </li>
+      <li>
+        Sort the dishes by score to produce a list of recommendations.
+        According to the graph above, <code>Pizza = 5.0, Pasta = 2.0</code>.
+      </li>
+      <li>
+        Filter items the user has already rated from the list of recommendations.
+      </li>
+    </ol>
+
+    <p>Fortunately, almost all of the work is already done for you in
+    the <i>SumPathNaiveRecommendationsProducer</i>. If instead you would like
+    to use the product of the weights along the edges, you can use the
+    <i>ProductPathNaiveRecommendationsProducer</i>. You need implement only 5
+    methods:</p>
+
+    <ul>
+      <li><i>getDataRequest()</i>: Request the favorite ingredients column
+      and the user's recent ratings (for filtering out rated items
+      from the recommendations).</li>
+      <li><i>getOutputColumn()</i>: Specify the output column for the
+      producer's generated data,
+      e.g. personalization:recommended_dishes.</li>
+      <li><i>getAffinities()</i>: Given the user's favorite ingredients,
+      generate the graph that represents the user as described above
+      in the algorithm. There should be one outgoing edge for each
+      ingredient.</li>
+      <li><i>getRequiredStores()</i>: The recommendation producer will
+      automatically generate the rest of the graph by looking up
+      dishes that contain the ingredient in a KeyValueStore called
+      "associations." In this method, you should bind that store to a
+      default implementation that will look up the dishes in the
+      wibi_hungry_category table that you populated with the
+      gatherer.</li>
+      <li><i>write()</i>: Given the graph, this method provides your producer
+      the opportunity to generate the list of recommendations to be
+      written to the output column. Here you should also filter out
+      any previously rated items.</li>
+    </ul>
+
+    <p>Implement your recommendation producer in a new file called
+    <code>DishRecommendationsProducer.java</code> and write a unit test. Refer to
+    the <a href="https://docs.wibidata.com/releases/wibi/latest/apidocs/">API
+    documentation</a> as needed. If you get stuck, you can peek at
+    the reference implementation in <code>$HOME/wibi-hungry-completed</code> for a
+    hint.</p>
+
+    <h4>15. Configure the recommendation producer to run with a
+    freshness policy</h4>
+
+    <p>Using the <code>favorite_ingredients.xml</code> freshener configuration as
+    an example, write a new freshener configuration in
+    <code>src/main/freshen/dish_recommendations.xml</code> and attach it just like
+    you did with the <code>favorite_ingredients</code> column using the <code>wibi
+    freshener</code> command.</p>
+
+    <p>Check that your freshener configuration was added correctly:</p>
+
+    <code>
+      <pre>
+    $ <b>wibi freshener --op=list --table=wibi_hungry_user</b>
+      </pre>
+    </code>
+
+    <h4>16. Display the user's dish recommendations</h4>
+
+    <p>Modify your web application to read from the new
+    <code>personalization:recommended_dishes</code> column. Be sure to enable
+    freshening in the WibiDataRequest. Verify that you see dish
+    recommendations as you rate new items in the web application.</p>
+
+    <p><b>Congratulations, you've completed the tutorial!</b></p>
+
+    <h3>Next Steps</h3>
+
+    <p>Feel free to experiment with different recommendation
+    algorithms by modifying your producer or writing new gatherers to
+    mine relationships between dishes. Here are some ideas:</p>
+
+    <ul>
+      <li>After you've gathered some user data, you can use the
+      CartesianProductGatherer to extract association rules for
+      collaborative filtering (people who like pizza also like
+      pasta).</li>
+      <li>The FavoriteIngredientsProducer uses raw counts of
+      ingredients. However, it will probably mean corn syrup, salt,
+      and sugar are on everyone's favorite ingredients list. This is
+      because they are popular ingredients in all dishes. You should
+      normalize the weights of a user's favorite ingredients based on
+      how popular the ingredient is in general.</li>
+      <li>Many dishes in the database do not have
+      ingredients. Consider extracting other features from the dish
+      based on its name or description to help determine which dishes
+      are related.</li>
+    </ul>
+  </body>
+</html>

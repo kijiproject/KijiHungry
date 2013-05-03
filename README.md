@@ -1,4 +1,5 @@
-(c) Copyright 2013 Wibidata, Inc.
+(c) Copyright 2013 WibiData, Inc.
+
 
 This project contains the skeleton for a web application that uses the
 KijiProject platform. It contains two modules in this directory:
